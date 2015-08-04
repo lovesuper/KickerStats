@@ -1,0 +1,46 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="su.scraplesh.kickerstats.FieldFragment"
+    >
+
+    <Button
+        android:id="@+id/button_red_goalkeeper"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@android:color/holo_red_light"
+        android:text="@string/goalkeeper"
+        />
+
+    <Button
+        android:id="@+id/button_red_forward"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@android:color/holo_red_dark"
+        android:text="@string/forward"
+        />
+
+    <Button
+        android:id="@+id/button_blue_forward"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@android:color/holo_blue_dark"
+        android:text="@string/forward"
+        />
+
+    <Button
+        android:id="@+id/button_blue_goalkeeper"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@android:color/holo_blue_light"
+        android:text="@string/goalkeeper"
+        />
+
+</LinearLayout>
