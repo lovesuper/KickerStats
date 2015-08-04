@@ -25,10 +25,7 @@ public class FieldFragment extends Fragment {
     @Bind(R.id.button_blue_forward) Button buttonBlueForward;
     @Bind(R.id.button_blue_goalkeeper) Button buttonBlueGoalkeeper;
 
-    private ParseObject redGoalkeeper;
-    private ParseObject redForward;
-    private ParseObject blueForward;
-    private ParseObject blueGoalkeeper;
+    private String buttonRedGoalkeeperText;
 
     public FieldFragment() {
         // Required empty public constructor
@@ -42,8 +39,6 @@ public class FieldFragment extends Fragment {
     ) {
         final View view = inflater.inflate(R.layout.fragment_field, container, false);
         ButterKnife.bind(this, view);
-
-        initView();
 
         return view;
     }
@@ -63,6 +58,12 @@ public class FieldFragment extends Fragment {
     public void onDetach() {
         super.onDetach();
         mListener = null;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        buttonRedForward.setText(buttonRedGoalkeeperText);
     }
 
     @OnClick(R.id.button_red_goalkeeper)
@@ -93,35 +94,20 @@ public class FieldFragment extends Fragment {
         }
     }
 
-    private void initView() {
-        if (redGoalkeeper == null) {
-            buttonRedForward.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
-            buttonBlueForward.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
-            buttonBlueGoalkeeper.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
-        }
+    public void setRedGoalkeeper(ParseObject player) {
+        buttonRedGoalkeeperText = player.getString("name");
     }
 
-    public void setRedGoalkeeper(ParseObject redGoalkeeper) {
-        this.redGoalkeeper = redGoalkeeper;
-        buttonRedForward.setBackgroundColor(getResources().getColor(android.R.color.holo_red_dark));
+    public void setRedForward(ParseObject player) {
+        buttonRedForward.setText(player.getString("name"));
     }
 
-    public void setRedForward(ParseObject redForward) {
-        this.redForward = redForward;
-        buttonBlueForward.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_dark));
+    public void setBlueForward(ParseObject player) {
+        buttonBlueForward.setText(player.getString("name"));
     }
 
-    public void setBlueForward(ParseObject blueForward) {
-        this.blueForward = blueForward;
-        buttonBlueGoalkeeper.setBackgroundColor(getResources().getColor(android.R.color.holo_blue_light));
-    }
-
-    public void setBlueGoalkeeper(ParseObject blueGoalkeeper) {
-        this.blueGoalkeeper = blueGoalkeeper;
-    }
-
-    public boolean allRolesSet() {
-        return redGoalkeeper != null && redForward != null && blueForward != null && blueGoalkeeper != null;
+    public void setBlueGoalkeeper(ParseObject player) {
+        buttonBlueGoalkeeper.setText(player.getString("name"));
     }
 
     public enum GameRole {

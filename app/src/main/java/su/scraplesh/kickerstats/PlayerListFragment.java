@@ -1,6 +1,7 @@
 package su.scraplesh.kickerstats;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.os.Bundle;
 import android.app.ListFragment;
 import android.view.View;
@@ -15,15 +16,32 @@ import java.util.List;
 public class PlayerListFragment extends ListFragment {
 
     public static final String TAG = "player_list";
+    public static final String ARG_ROLE = "role";
 
+    private FieldFragment.GameRole gameRole;
     private OnSelectPlayerListener mListener;
     private List<ParseObject> players = new ArrayList<>();
 
+    public static PlayerListFragment newInstance(FieldFragment.GameRole gameRole) {
+        final PlayerListFragment fragment = new PlayerListFragment();
+
+        final Bundle args = new Bundle();
+        args.putSerializable(ARG_ROLE, gameRole);
+        fragment.setArguments(args);
+
+        return fragment;
+    }
+
     public PlayerListFragment() { }
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (getArguments() != null) {
+            gameRole = (FieldFragment.GameRole) getArguments().getSerializable(ARG_ROLE);
+        }
 
         setListAdapter(new ArrayAdapter<String>(
                 getActivity(),
@@ -31,7 +49,6 @@ public class PlayerListFragment extends ListFragment {
                 android.R.id.text1
         ));
     }
-
 
     @Override
     public void onAttach(Activity activity) {
@@ -55,7 +72,7 @@ public class PlayerListFragment extends ListFragment {
         super.onListItemClick(l, v, position, id);
 
         if (mListener != null) {
-            mListener.onSelectPlayer(players.get(position));
+            mListener.onSelectPlayer(players.get(position), gameRole);
         }
     }
 
@@ -75,7 +92,7 @@ public class PlayerListFragment extends ListFragment {
 
     public interface OnSelectPlayerListener {
 
-        void onSelectPlayer(ParseObject player);
+        void onSelectPlayer(ParseObject player, FieldFragment.GameRole gameRole);
 
     }
 
