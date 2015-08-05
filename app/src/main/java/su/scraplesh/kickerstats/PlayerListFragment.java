@@ -1,7 +1,6 @@
 package su.scraplesh.kickerstats;
 
 import android.app.Activity;
-import android.app.Fragment;
 import android.os.Bundle;
 import android.app.ListFragment;
 import android.view.View;
@@ -16,17 +15,20 @@ import java.util.List;
 public class PlayerListFragment extends ListFragment {
 
     public static final String TAG = "player_list";
+    public static final String ARG_TEAM = "team";
     public static final String ARG_ROLE = "role";
 
-    private FieldFragment.GameRole gameRole;
+    private MainActivity.Team team;
+    private MainActivity.Role role;
     private OnSelectPlayerListener mListener;
     private List<ParseObject> players = new ArrayList<>();
 
-    public static PlayerListFragment newInstance(FieldFragment.GameRole gameRole) {
+    public static PlayerListFragment newInstance(MainActivity.Team team, MainActivity.Role role) {
         final PlayerListFragment fragment = new PlayerListFragment();
 
         final Bundle args = new Bundle();
-        args.putSerializable(ARG_ROLE, gameRole);
+        args.putSerializable(ARG_TEAM, team);
+        args.putSerializable(ARG_ROLE, role);
         fragment.setArguments(args);
 
         return fragment;
@@ -40,7 +42,8 @@ public class PlayerListFragment extends ListFragment {
         super.onCreate(savedInstanceState);
 
         if (getArguments() != null) {
-            gameRole = (FieldFragment.GameRole) getArguments().getSerializable(ARG_ROLE);
+            team = (MainActivity.Team) getArguments().getSerializable(ARG_TEAM);
+            role = (MainActivity.Role) getArguments().getSerializable(ARG_ROLE);
         }
 
         setListAdapter(new ArrayAdapter<String>(
@@ -72,7 +75,7 @@ public class PlayerListFragment extends ListFragment {
         super.onListItemClick(l, v, position, id);
 
         if (mListener != null) {
-            mListener.onSelectPlayer(players.get(position), gameRole);
+            mListener.onSelectPlayer(players.get(position), team, role);
         }
     }
 
@@ -92,7 +95,7 @@ public class PlayerListFragment extends ListFragment {
 
     public interface OnSelectPlayerListener {
 
-        void onSelectPlayer(ParseObject player, FieldFragment.GameRole gameRole);
+        void onSelectPlayer(ParseObject player, MainActivity.Team team, MainActivity.Role role);
 
     }
 

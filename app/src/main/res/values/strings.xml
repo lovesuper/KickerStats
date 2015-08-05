@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">KickerStats</string>
+    <string name="app_name">Кикер</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
@@ -12,4 +12,7 @@
     <string name="start_game">Начать игру</string>
     <string name="to_red">Красным</string>
     <string name="to_blue">Синим</string>
+    <string name="choose_player">Выберите игрока</string>
+    <string name="reset_game">Сбросить игру</string>
+    <string name="no_active_games">Нет активных игр</string>
 </resources>

@@ -7,8 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-
-import com.parse.ParseObject;
+import android.widget.TextView;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -24,8 +23,8 @@ public class FieldFragment extends Fragment {
     @Bind(R.id.button_red_forward) Button buttonRedForward;
     @Bind(R.id.button_blue_forward) Button buttonBlueForward;
     @Bind(R.id.button_blue_goalkeeper) Button buttonBlueGoalkeeper;
-
-    private String buttonRedGoalkeeperText;
+    @Bind(R.id.text_red_goals) TextView textRedGoals;
+    @Bind(R.id.text_blue_goals) TextView textBlueGoals;
 
     public FieldFragment() {
         // Required empty public constructor
@@ -63,64 +62,54 @@ public class FieldFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        buttonRedForward.setText(buttonRedGoalkeeperText);
+        updateView();
+    }
+
+    public void updateView() {
+        buttonRedGoalkeeper.setText(mListener.getPlayerName(MainActivity.Team.Red, MainActivity.Role.Goalkeeper));
+        buttonRedForward.setText(mListener.getPlayerName(MainActivity.Team.Red, MainActivity.Role.Forward));
+        buttonBlueForward.setText(mListener.getPlayerName(MainActivity.Team.Blue, MainActivity.Role.Forward));
+        buttonBlueGoalkeeper.setText(mListener.getPlayerName(MainActivity.Team.Blue, MainActivity.Role.Goalkeeper));
+
+        if (mListener.isPlayersSet()){
+            textRedGoals.setVisibility(View.VISIBLE);
+            textRedGoals.setText(String.valueOf(mListener.getRedGoals()));
+            textBlueGoals.setVisibility(View.VISIBLE);
+            textBlueGoals.setText(String.valueOf(mListener.getBlueGoals()));
+        } else {
+            textRedGoals.setVisibility(View.INVISIBLE);
+            textRedGoals.setText("0");
+            textBlueGoals.setVisibility(View.INVISIBLE);
+            textBlueGoals.setText("0");
+        }
     }
 
     @OnClick(R.id.button_red_goalkeeper)
     public void onSelectRedGoalkeeper() {
-        if (mListener != null) {
-            mListener.onSelectGameRole(GameRole.RedGoalkeeper);
-        }
+        mListener.onSelectGameRole(MainActivity.Team.Red, MainActivity.Role.Goalkeeper);
     }
 
     @OnClick(R.id.button_red_forward)
     public void onSelectRedForward() {
-        if (mListener != null) {
-            mListener.onSelectGameRole(GameRole.RedForward);
-        }
+        mListener.onSelectGameRole(MainActivity.Team.Red, MainActivity.Role.Forward);
     }
 
     @OnClick(R.id.button_blue_forward)
     public void onSelectBlueForward() {
-        if (mListener != null) {
-            mListener.onSelectGameRole(GameRole.BlueForward);
-        }
+        mListener.onSelectGameRole(MainActivity.Team.Blue, MainActivity.Role.Forward);
     }
 
     @OnClick(R.id.button_blue_goalkeeper)
     public void onSelectBlueGoalkeeper() {
-        if (mListener != null) {
-            mListener.onSelectGameRole(GameRole.BlueGoalkeeper);
-        }
-    }
-
-    public void setRedGoalkeeper(ParseObject player) {
-        buttonRedGoalkeeperText = player.getString("name");
-    }
-
-    public void setRedForward(ParseObject player) {
-        buttonRedForward.setText(player.getString("name"));
-    }
-
-    public void setBlueForward(ParseObject player) {
-        buttonBlueForward.setText(player.getString("name"));
-    }
-
-    public void setBlueGoalkeeper(ParseObject player) {
-        buttonBlueGoalkeeper.setText(player.getString("name"));
-    }
-
-    public enum GameRole {
-        RedGoalkeeper,
-        RedForward,
-        BlueForward,
-        BlueGoalkeeper
+        mListener.onSelectGameRole(MainActivity.Team.Blue, MainActivity.Role.Goalkeeper);
     }
 
     public interface OnSelectGameRoleListener {
-
-        void onSelectGameRole(GameRole gameRole);
-
+        void onSelectGameRole(MainActivity.Team team, MainActivity.Role role);
+        String getPlayerName(MainActivity.Team team, MainActivity.Role role);
+        boolean isPlayersSet();
+        int getRedGoals();
+        int getBlueGoals();
     }
 
 }
