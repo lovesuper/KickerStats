@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.parse.DeleteCallback;
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
@@ -18,6 +19,8 @@ public class MainActivity extends Activity implements
         FieldFragment.OnSelectGameRoleListener,
         PlayerListFragment.OnSelectPlayerListener,
         GoalFragment.OnGoalListener {
+
+    public static final String PLAYERS_LIST_LABEL = "playersList";
 
     private ParseObject activeGame;
     private ParseObject redGoalkeeper;
@@ -54,7 +57,7 @@ public class MainActivity extends Activity implements
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.findItem(R.id.action_end_game).setVisible(isPlayersSet());
-        menu.findItem(R.id.action_reset_game).setVisible(isPlayersSet());
+        menu.findItem(R.id.action_reset_game).setVisible(activeGame != null);
 
         return super.onPrepareOptionsMenu(menu);
     }
@@ -68,11 +71,6 @@ public class MainActivity extends Activity implements
             case R.id.action_reset_game: {
                 return resetGame();
             }
-            case android.R.id.home: {
-                setResult(RESULT_OK);
-                finish();
-                return true;
-            }
             default: {
                 return super.onOptionsItemSelected(item);
             }
@@ -83,6 +81,12 @@ public class MainActivity extends Activity implements
         activeFragmentTag = NoGameFragment.TAG;
         getFragmentManager().beginTransaction()
                 .replace(R.id.container, new NoGameFragment(), activeFragmentTag)
+                .setCustomAnimations(
+                        R.animator.slide_in_left,
+                        R.animator.slide_out_right,
+                        R.animator.slide_in_right,
+                        R.animator.slide_out_left
+                )
                 .addToBackStack(null)
                 .commit();
 
@@ -117,11 +121,18 @@ public class MainActivity extends Activity implements
     @Override
     public void onStartGame() {
         activeGame = new ParseObject("Game");
+        activeGame.put("isDeleted", false);
         activeGame.saveEventually();
 
         activeFragmentTag = FieldFragment.TAG;
         getFragmentManager().beginTransaction()
                 .replace(R.id.container, new FieldFragment(), activeFragmentTag)
+                .setCustomAnimations(
+                        R.animator.slide_in_left,
+                        R.animator.slide_out_right,
+                        R.animator.slide_in_right,
+                        R.animator.slide_out_left
+                )
                 .addToBackStack(null)
                 .commit();
 
@@ -182,16 +193,51 @@ public class MainActivity extends Activity implements
                     .addToBackStack(null)
                     .commit();
 
-            ParseQuery.getQuery("Player").findInBackground(new FindCallback<ParseObject>() {
-                @Override
-                public void done(List<ParseObject> players, ParseException e) {
-                    final PlayerListFragment playerListFragment = (PlayerListFragment) getFragmentManager().findFragmentByTag(PlayerListFragment.TAG);
-                    playerListFragment.updatePlayers(players);
-                }
-            });
+
+            ParseQuery.getQuery("Player")
+                    .fromLocalDatastore()
+                    .orderByAscending("name")
+                    .findInBackground(new FindCallback<ParseObject>() {
+                        @Override
+                        public void done(final List<ParseObject> players, ParseException e) {
+                            if (players.isEmpty()) {
+                                ParseQuery.getQuery("Player")
+                                        .orderByAscending("name")
+                                        .findInBackground(new FindCallback<ParseObject>() {
+                                            @Override
+                                            public void done(final List<ParseObject> players, ParseException e) {
+                                                // Release any objects previously pinned for this query.
+                                                ParseObject.unpinAllInBackground(PLAYERS_LIST_LABEL, players, new DeleteCallback() {
+                                                    public void done(ParseException e) {
+                                                        if (e != null) {
+                                                            // There was some error.
+                                                            return;
+                                                        }
+
+                                                        // Add the latest results for this query to the cache.
+                                                        ParseObject.pinAllInBackground(PLAYERS_LIST_LABEL, players);
+                                                        updatePlayers(players);
+                                                    }
+                                                });
+                                            }
+                                        });
+                            } else {
+                                updatePlayers(players);
+                            }
+                        }
+                    });
         }
 
         updateBar();
+    }
+
+    private void updatePlayers(final List<ParseObject> players) {
+        final PlayerListFragment playerListFragment = (
+                (PlayerListFragment) getFragmentManager().findFragmentByTag(
+                        PlayerListFragment.TAG
+                )
+        );
+        playerListFragment.updatePlayers(players);
     }
 
     @Override
