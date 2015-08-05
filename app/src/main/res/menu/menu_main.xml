@@ -5,14 +5,17 @@
     >
 
     <item
-        android:id="@+id/action_start_game"
-        android:title="@string/start_game"
+        android:id="@+id/action_end_game"
+        android:title="@string/end_game"
+        android:icon="@drawable/ic_action_end_game"
         android:showAsAction="ifRoom"
         />
 
     <item
         android:id="@+id/action_reset_game"
         android:title="@string/reset_game"
+        android:icon="@drawable/ic_action_reset_game"
         android:showAsAction="ifRoom"
         />
+
 </menu>

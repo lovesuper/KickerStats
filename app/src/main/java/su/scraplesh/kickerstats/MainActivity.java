@@ -5,26 +5,19 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.FrameLayout;
 
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
-import com.parse.SaveCallback;
 
 import java.util.List;
 
-import butterknife.Bind;
-import butterknife.ButterKnife;
-
 public class MainActivity extends Activity implements
+        NoGameFragment.OnStartGameListener,
         FieldFragment.OnSelectGameRoleListener,
         PlayerListFragment.OnSelectPlayerListener,
         GoalFragment.OnGoalListener {
-
-    @Bind(R.id.container) FrameLayout container;
 
     private ParseObject activeGame;
     private ParseObject redGoalkeeper;
@@ -43,9 +36,7 @@ public class MainActivity extends Activity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        ButterKnife.bind(this);
-
-        resetGame();
+        onGameEnded();
     }
 
     @Override
@@ -62,8 +53,8 @@ public class MainActivity extends Activity implements
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        menu.findItem(R.id.action_start_game).setVisible(activeGame == null);
-        menu.findItem(R.id.action_reset_game).setVisible(activeGame != null);
+        menu.findItem(R.id.action_end_game).setVisible(isPlayersSet());
+        menu.findItem(R.id.action_reset_game).setVisible(isPlayersSet());
 
         return super.onPrepareOptionsMenu(menu);
     }
@@ -71,8 +62,8 @@ public class MainActivity extends Activity implements
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.action_start_game: {
-                return onStartGame();
+            case R.id.action_end_game: {
+                return onGameEnded();
             }
             case R.id.action_reset_game: {
                 return resetGame();
@@ -88,11 +79,12 @@ public class MainActivity extends Activity implements
         }
     }
 
-    private boolean resetGame() {
-        if (activeGame != null) {
-            activeGame.put("active", false);
-            activeGame.saveInBackground();
-        }
+    private boolean onGameEnded() {
+        activeFragmentTag = NoGameFragment.TAG;
+        getFragmentManager().beginTransaction()
+                .replace(R.id.container, new NoGameFragment(), activeFragmentTag)
+                .addToBackStack(null)
+                .commit();
 
         activeGame = null;
         redGoalkeeper = null;
@@ -109,33 +101,31 @@ public class MainActivity extends Activity implements
 
         updateBar();
 
-        container.removeAllViews();
-        View.inflate(this, R.layout.nonactive_game, container);
+        return true;
+    }
+
+    private boolean resetGame() {
+        if (activeGame != null) {
+            activeGame.put("isDeleted", true);
+            activeGame.saveEventually();
+        }
+        onGameEnded();
 
         return true;
     }
 
-    private boolean onStartGame() {
-        final ParseObject newGame = new ParseObject("Game");
-        newGame.put("active", true);
-        newGame.saveInBackground(new SaveCallback() {
-            @Override
-            public void done(ParseException e) {
-                activeGame = newGame;
+    @Override
+    public void onStartGame() {
+        activeGame = new ParseObject("Game");
+        activeGame.saveEventually();
 
-                container.removeAllViews();
+        activeFragmentTag = FieldFragment.TAG;
+        getFragmentManager().beginTransaction()
+                .replace(R.id.container, new FieldFragment(), activeFragmentTag)
+                .addToBackStack(null)
+                .commit();
 
-                activeFragmentTag = FieldFragment.TAG;
-                getFragmentManager().beginTransaction()
-                        .replace(R.id.container, new FieldFragment(), activeFragmentTag)
-                        .addToBackStack(null)
-                        .commit();
-
-                updateBar();
-            }
-        });
-
-        return true;
+        updateBar();
     }
 
     private void updateBar() {
@@ -143,11 +133,7 @@ public class MainActivity extends Activity implements
         if (bar != null && activeFragmentTag != null) {
             switch (activeFragmentTag) {
                 case FieldFragment.TAG: {
-                    if (activeGame == null) {
-                        bar.setTitle("Начните игру");
-                    } else {
-                        bar.setTitle(isPlayersSet() ? "Кто забил?" : "Установите игроков...");
-                    }
+                    bar.setTitle(isPlayersSet() ? "Кто забил?" : "Установите игроков...");
                     break;
                 }
                 case PlayerListFragment.TAG: {
@@ -156,6 +142,10 @@ public class MainActivity extends Activity implements
                 }
                 case GoalFragment.TAG: {
                     bar.setTitle("Кому забили?");
+                    break;
+                }
+                default: {
+                    bar.setTitle(getString(R.string.app_name));
                     break;
                 }
             }
@@ -255,16 +245,11 @@ public class MainActivity extends Activity implements
             }
         }
 
-        newRole.saveInBackground(new SaveCallback() {
-            @Override
-            public void done(ParseException e) {
-                activeFragmentTag = FieldFragment.TAG;
+        newRole.saveEventually();
 
-                getFragmentManager().popBackStack();
-                updateBar();
-            }
-        });
-
+        activeFragmentTag = FieldFragment.TAG;
+        getFragmentManager().popBackStack();
+        updateBar();
     }
 
     @Override
@@ -276,12 +261,10 @@ public class MainActivity extends Activity implements
                 switch (who) {
                     case Goalkeeper: {
                         newGoal.put("who", redGoalkeeper);
-
                         break;
                     }
                     case Forward: {
                         newGoal.put("who", redForward);
-
                         break;
                     }
                 }
@@ -291,12 +274,10 @@ public class MainActivity extends Activity implements
                 switch (who) {
                     case Goalkeeper: {
                         newGoal.put("who", blueGoalkeeper);
-
                         break;
                     }
                     case Forward: {
                         newGoal.put("who", blueForward);
-
                         break;
                     }
                 }
@@ -317,18 +298,15 @@ public class MainActivity extends Activity implements
             }
         }
 
-        newGoal.saveInBackground(new SaveCallback() {
-            @Override
-            public void done(ParseException e) {
-                if (redGoals == 10 || blueGoals == 10) {
-                    resetGame();
-                } else {
-                    getFragmentManager().popBackStack();
-                    activeFragmentTag = FieldFragment.TAG;
-                    updateBar();
-                }
-            }
-        });
+        newGoal.saveEventually();
+
+        if (redGoals == 10 || blueGoals == 10) {
+            onGameEnded();
+        } else {
+            getFragmentManager().popBackStack();
+            activeFragmentTag = FieldFragment.TAG;
+            updateBar();
+        }
     }
 
     @Override
@@ -339,15 +317,11 @@ public class MainActivity extends Activity implements
             case Red: {
                 switch (role) {
                     case Goalkeeper: {
-                        if (redGoalkeeperName != null) {
-                            name = redGoalkeeperName;
-                        }
+                        name = redGoalkeeperName != null ? redGoalkeeperName : getString(R.string.choose_goalkeeper);
                         break;
                     }
                     case Forward: {
-                        if (redForwardName != null) {
-                            name = redForwardName;
-                        }
+                        name = redForwardName != null ? redForwardName : getString(R.string.choose_forward);
                         break;
                     }
                 }
@@ -356,15 +330,11 @@ public class MainActivity extends Activity implements
             case Blue: {
                 switch (role) {
                     case Goalkeeper: {
-                        if (blueGoalkeeperName != null) {
-                            name = blueGoalkeeperName;
-                        }
+                        name = blueGoalkeeperName != null ? blueGoalkeeperName : getString(R.string.choose_goalkeeper);
                         break;
                     }
                     case Forward: {
-                        if (blueForwardName != null) {
-                            name = blueForwardName;
-                        }
+                        name = blueForwardName != null ? blueForwardName : getString(R.string.choose_forward);
                         break;
                     }
                 }

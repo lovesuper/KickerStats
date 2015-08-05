@@ -15,4 +15,7 @@
     <string name="choose_player">Выберите игрока</string>
     <string name="reset_game">Сбросить игру</string>
     <string name="no_active_games">Нет активных игр</string>
+    <string name="choose_goalkeeper">Выберите вратаря</string>
+    <string name="choose_forward">Выберите нападающего</string>
+    <string name="end_game">Закончить игру</string>
 </resources>
