@@ -2,6 +2,7 @@ package su.scraplesh.kickerstats;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.FragmentManager;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -18,7 +19,8 @@ public class MainActivity extends Activity implements
         NoGameFragment.OnStartGameListener,
         FieldFragment.OnSelectGameRoleListener,
         PlayerListFragment.OnSelectPlayerListener,
-        GoalFragment.OnGoalListener {
+        GoalFragment.OnGoalListener,
+        FragmentManager.OnBackStackChangedListener {
 
     public static final String PLAYERS_LIST_LABEL = "playersList";
 
@@ -40,6 +42,54 @@ public class MainActivity extends Activity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         onGameEnded();
+
+        getFragmentManager().addOnBackStackChangedListener(this);
+        //Handle when activity is recreated like on orientation Change
+        shouldDisplayHomeUp();
+    }
+
+    private void shouldDisplayHomeUp() {
+        boolean canBack = false;
+        switch (activeFragmentTag) {
+            case GoalFragment.TAG:
+            case PlayerListFragment.TAG : {
+                canBack = true;
+                break;
+            }
+        }
+        final ActionBar bar = getActionBar();
+        if (bar != null) {
+            bar.setDisplayHomeAsUpEnabled(canBack);
+        }
+    }
+
+    @Override
+    public void onBackStackChanged() {
+        shouldDisplayHomeUp();
+    }
+
+    @Override
+    public boolean onNavigateUp() {
+        onBackPressed();
+        return super.onNavigateUp();
+    }
+
+    @Override
+    public void onBackPressed() {
+        switch (activeFragmentTag) {
+            case FieldFragment.TAG: {
+                resetGame();
+                break;
+            }
+            case NoGameFragment.TAG: {
+                break;
+            }
+            default: {
+                activeFragmentTag = FieldFragment.TAG;
+                updateBar();
+                super.onBackPressed();
+            }
+        }
     }
 
     @Override
