@@ -21,7 +21,6 @@ import java.util.List;
 public class MainActivity extends Activity implements
         NoGameFragment.OnStartGameListener,
         FieldFragment.OnSelectGameRoleListener,
-        PlayerListFragment.OnSelectPlayerListener,
         FragmentManager.OnBackStackChangedListener {
 
     public static final String PLAYERS_LIST_LABEL = "playersList";
@@ -244,17 +243,7 @@ public class MainActivity extends Activity implements
         invalidateOptionsMenu();
     }
 
-    private void updatePlayers(final List<ParseObject> players) {
-        final PlayerListFragment playerListFragment = (
-                (PlayerListFragment) getFragmentManager().findFragmentByTag(
-                        PlayerListFragment.TAG
-                )
-        );
-        playerListFragment.updatePlayers(players);
-    }
-
-    @Override
-    public void onSelectPlayer(ParseObject player, Team team, Role role) {
+    private void onSelectPlayer(ParseObject player, Team team, Role role) {
         ParseObject newRole = new ParseObject("GameRole");
         newRole.put("game", activeGame);
         newRole.put("player", player);
@@ -312,9 +301,10 @@ public class MainActivity extends Activity implements
     }
 
     @Override
-    public void onSelectGameRole(Team team, Role role) {
+    public void onSelectGameRole(final Team team, final Role role) {
         activeFragmentTag = PlayerListFragment.TAG;
 
+        final PlayerListFragment fragment = new PlayerListFragment();
         getFragmentManager().beginTransaction()
                 .setCustomAnimations(
                         R.animator.slide_in_left,
@@ -322,10 +312,16 @@ public class MainActivity extends Activity implements
                         R.animator.slide_in_right,
                         R.animator.slide_out_left
                 )
-                .replace(R.id.container, PlayerListFragment.newInstance(team, role), activeFragmentTag)
+                .replace(R.id.container, fragment, activeFragmentTag)
                 .addToBackStack(null)
                 .commit();
 
+        fragment.setOnSelectPlayerListener(new PlayerListFragment.OnSelectPlayerListener() {
+            @Override
+            public void onSelectPlayer(ParseObject player) {
+                MainActivity.this.onSelectPlayer(player, team, role);
+            }
+        });
 
         ParseQuery.getQuery("Player")
                 .fromLocalDatastore()
@@ -349,13 +345,13 @@ public class MainActivity extends Activity implements
 
                                                     // Add the latest results for this query to the cache.
                                                     ParseObject.pinAllInBackground(PLAYERS_LIST_LABEL, players);
-                                                    updatePlayers(players);
+                                                    fragment.updatePlayers(players);
                                                 }
                                             });
                                         }
                                     });
                         } else {
-                            updatePlayers(players);
+                            fragment.updatePlayers(players);
                         }
                     }
                 });
