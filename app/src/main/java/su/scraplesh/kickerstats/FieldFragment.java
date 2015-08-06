@@ -71,37 +71,20 @@ public class FieldFragment extends Fragment {
 
     public void updateView() {
         final String redGoalkeeperName = mListener.getPlayerName(MainActivity.Team.Red, MainActivity.Role.Goalkeeper);
-        if (redGoalkeeperName != null) {
-            buttonRedGoalkeeper.setText(redGoalkeeperName);
-            buttonRedGoalkeeperAutoGoal.setVisibility(View.VISIBLE);
-        } else {
-            buttonRedGoalkeeper.setText(getString(R.string.choose_goalkeeper));
-            buttonRedGoalkeeperAutoGoal.setVisibility(View.GONE);
-        }
+        buttonRedGoalkeeper.setText(redGoalkeeperName != null ? redGoalkeeperName : getString(R.string.choose_goalkeeper));
+        buttonRedGoalkeeperAutoGoal.setVisibility(redGoalkeeperName != null && mListener.arePlayersSet() ? View.VISIBLE : View.GONE);
+
         final String redForwardName = mListener.getPlayerName(MainActivity.Team.Red, MainActivity.Role.Forward);
-        if (redForwardName != null) {
-            buttonRedForward.setText(redForwardName);
-            buttonRedForwardAutogoal.setVisibility(View.VISIBLE);
-        } else {
-            buttonRedForward.setText(getString(R.string.choose_forward));
-            buttonRedForwardAutogoal.setVisibility(View.GONE);
-        }
+        buttonRedForward.setText(redForwardName != null ? redForwardName : getString(R.string.choose_forward));
+        buttonRedForwardAutogoal.setVisibility(redForwardName != null && mListener.arePlayersSet() ? View.VISIBLE: View.GONE);
+
         final String blueForwardName = mListener.getPlayerName(MainActivity.Team.Blue, MainActivity.Role.Forward);
-        if (blueForwardName != null) {
-            buttonBlueForward.setText(blueForwardName);
-            buttonBlueForwardAutoGoal.setVisibility(View.VISIBLE);
-        } else {
-            buttonBlueForward.setText(getString(R.string.choose_forward));
-            buttonBlueForwardAutoGoal.setVisibility(View.GONE);
-        }
+        buttonBlueForward.setText(blueForwardName != null ? blueForwardName : getString(R.string.choose_forward));
+        buttonBlueForwardAutoGoal.setVisibility(blueForwardName != null && mListener.arePlayersSet() ? View.VISIBLE : View.GONE);
+
         final String blueGoalkeeperName = mListener.getPlayerName(MainActivity.Team.Blue, MainActivity.Role.Goalkeeper);
-        if (blueGoalkeeperName != null) {
-            buttonBlueGoalkeeper.setText(blueGoalkeeperName);
-            buttonBlueGoalkeeperAutoGoal.setVisibility(View.VISIBLE);
-        } else {
-            buttonBlueGoalkeeper.setText(getString(R.string.choose_goalkeeper));
-            buttonBlueGoalkeeperAutoGoal.setVisibility(View.GONE);
-        }
+        buttonBlueGoalkeeper.setText(blueGoalkeeperName != null ? blueGoalkeeperName : getString(R.string.choose_goalkeeper));
+        buttonBlueGoalkeeperAutoGoal.setVisibility(blueGoalkeeperName != null && mListener.arePlayersSet() ? View.VISIBLE : View.GONE);
 
         if (mListener.arePlayersSet()){
             textRedGoals.setVisibility(View.VISIBLE);

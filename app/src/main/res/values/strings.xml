@@ -19,4 +19,5 @@
     <string name="choose_forward">Выберите нападающего</string>
     <string name="end_game">Закончить игру</string>
     <string name="autogoal">Автогол</string>
+    <string name="game_ended">Игра окончена</string>
 </resources>

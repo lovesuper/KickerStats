@@ -2,8 +2,9 @@ package su.scraplesh.kickerstats;
 
 import android.app.ActionBar;
 import android.app.Activity;
-import android.app.Fragment;
+import android.app.AlertDialog;
 import android.app.FragmentManager;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -41,7 +42,7 @@ public class MainActivity extends Activity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        onGameEnded();
+        onGameEnded(true);
 
         getFragmentManager().addOnBackStackChangedListener(this);
         //Handle when activity is recreated like on orientation Change
@@ -49,16 +50,9 @@ public class MainActivity extends Activity implements
     }
 
     private void shouldDisplayHomeUp() {
-        boolean canBack = false;
-        switch (activeFragmentTag) {
-            case PlayerListFragment.TAG : {
-                canBack = true;
-                break;
-            }
-        }
         final ActionBar bar = getActionBar();
         if (bar != null) {
-            bar.setDisplayHomeAsUpEnabled(canBack);
+            bar.setDisplayHomeAsUpEnabled(!activeFragmentTag.equals(NoGameFragment.TAG));
         }
     }
 
@@ -70,7 +64,7 @@ public class MainActivity extends Activity implements
     @Override
     public boolean onNavigateUp() {
         onBackPressed();
-        return super.onNavigateUp();
+        return true;
     }
 
     @Override
@@ -115,7 +109,7 @@ public class MainActivity extends Activity implements
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_end_game: {
-                return onGameEnded();
+                return onGameEnded(false);
             }
             case R.id.action_reset_game: {
                 return resetGame();
@@ -126,10 +120,11 @@ public class MainActivity extends Activity implements
         }
     }
 
-    private boolean onGameEnded() {
+    private boolean onGameEnded(boolean isReseted) {
         activeFragmentTag = NoGameFragment.TAG;
+        final NoGameFragment fragment = isReseted ? new NoGameFragment() : NoGameFragment.gameEnded(redGoals, blueGoals);
         getFragmentManager().beginTransaction()
-                .replace(R.id.container, new NoGameFragment(), activeFragmentTag)
+                .replace(R.id.container, fragment, activeFragmentTag)
                 .setCustomAnimations(
                         R.animator.slide_in_left,
                         R.animator.slide_out_right,
@@ -158,11 +153,22 @@ public class MainActivity extends Activity implements
     }
 
     private boolean resetGame() {
-        if (activeGame != null) {
-            activeGame.put("isDeleted", true);
-            activeGame.saveEventually();
-        }
-        onGameEnded();
+        new AlertDialog.Builder(this)
+                .setTitle("Сброс игры")
+                .setMessage("Вы уверены, что хотите сбросить игру?")
+                .setPositiveButton("Да", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        if (activeGame != null) {
+                            activeGame.put("isDeleted", true);
+                            activeGame.saveEventually();
+                        }
+                        onGameEnded(true);
+                    }
+                })
+                .setNegativeButton("Нет", null)
+                .create()
+                .show();
 
         return true;
     }
@@ -380,7 +386,7 @@ public class MainActivity extends Activity implements
         newGoal.saveEventually();
 
         if (redGoals == 10 || blueGoals == 10) {
-            onGameEnded();
+            onGameEnded(false);
         } else {
             final FieldFragment fragment = (FieldFragment) getFragmentManager().findFragmentByTag(FieldFragment.TAG);
             fragment.updateView();
