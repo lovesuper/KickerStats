@@ -18,4 +18,5 @@
     <string name="choose_goalkeeper">Выберите вратаря</string>
     <string name="choose_forward">Выберите нападающего</string>
     <string name="end_game">Закончить игру</string>
+    <string name="autogoal">Автогол</string>
 </resources>

@@ -2,6 +2,7 @@ package su.scraplesh.kickerstats;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.Fragment;
 import android.app.FragmentManager;
 import android.os.Bundle;
 import android.view.Menu;
@@ -19,7 +20,6 @@ public class MainActivity extends Activity implements
         NoGameFragment.OnStartGameListener,
         FieldFragment.OnSelectGameRoleListener,
         PlayerListFragment.OnSelectPlayerListener,
-        GoalFragment.OnGoalListener,
         FragmentManager.OnBackStackChangedListener {
 
     public static final String PLAYERS_LIST_LABEL = "playersList";
@@ -51,7 +51,6 @@ public class MainActivity extends Activity implements
     private void shouldDisplayHomeUp() {
         boolean canBack = false;
         switch (activeFragmentTag) {
-            case GoalFragment.TAG:
             case PlayerListFragment.TAG : {
                 canBack = true;
                 break;
@@ -106,7 +105,7 @@ public class MainActivity extends Activity implements
 
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
-        menu.findItem(R.id.action_end_game).setVisible(isPlayersSet());
+        menu.findItem(R.id.action_end_game).setVisible(arePlayersSet());
         menu.findItem(R.id.action_reset_game).setVisible(activeGame != null);
 
         return super.onPrepareOptionsMenu(menu);
@@ -194,15 +193,11 @@ public class MainActivity extends Activity implements
         if (bar != null && activeFragmentTag != null) {
             switch (activeFragmentTag) {
                 case FieldFragment.TAG: {
-                    bar.setTitle(isPlayersSet() ? "Кто забил?" : "Установите игроков...");
+                    bar.setTitle(arePlayersSet() ? "Кто забил?" : "Установите игроков...");
                     break;
                 }
                 case PlayerListFragment.TAG: {
                     bar.setTitle("Выберите игрока...");
-                    break;
-                }
-                case GoalFragment.TAG: {
-                    bar.setTitle("Кому забили?");
                     break;
                 }
                 default: {
@@ -212,73 +207,6 @@ public class MainActivity extends Activity implements
             }
         }
         invalidateOptionsMenu();
-    }
-
-    @Override
-    public void onSelectGameRole(Team team, Role role) {
-        if (isPlayersSet()) {
-            activeFragmentTag = GoalFragment.TAG;
-
-            getFragmentManager().beginTransaction()
-                    .setCustomAnimations(
-                            R.animator.slide_in_left,
-                            R.animator.slide_out_right,
-                            R.animator.slide_in_right,
-                            R.animator.slide_out_left
-                    )
-                    .replace(R.id.container, GoalFragment.newInstance(team, role), activeFragmentTag)
-                    .addToBackStack(null)
-                    .commit();
-        } else {
-            activeFragmentTag = PlayerListFragment.TAG;
-
-            getFragmentManager().beginTransaction()
-                    .setCustomAnimations(
-                            R.animator.slide_in_left,
-                            R.animator.slide_out_right,
-                            R.animator.slide_in_right,
-                            R.animator.slide_out_left
-                    )
-                    .replace(R.id.container, PlayerListFragment.newInstance(team, role), activeFragmentTag)
-                    .addToBackStack(null)
-                    .commit();
-
-
-            ParseQuery.getQuery("Player")
-                    .fromLocalDatastore()
-                    .orderByAscending("name")
-                    .findInBackground(new FindCallback<ParseObject>() {
-                        @Override
-                        public void done(final List<ParseObject> players, ParseException e) {
-                            if (players.isEmpty()) {
-                                ParseQuery.getQuery("Player")
-                                        .orderByAscending("name")
-                                        .findInBackground(new FindCallback<ParseObject>() {
-                                            @Override
-                                            public void done(final List<ParseObject> players, ParseException e) {
-                                                // Release any objects previously pinned for this query.
-                                                ParseObject.unpinAllInBackground(PLAYERS_LIST_LABEL, players, new DeleteCallback() {
-                                                    public void done(ParseException e) {
-                                                        if (e != null) {
-                                                            // There was some error.
-                                                            return;
-                                                        }
-
-                                                        // Add the latest results for this query to the cache.
-                                                        ParseObject.pinAllInBackground(PLAYERS_LIST_LABEL, players);
-                                                        updatePlayers(players);
-                                                    }
-                                                });
-                                            }
-                                        });
-                            } else {
-                                updatePlayers(players);
-                            }
-                        }
-                    });
-        }
-
-        updateBar();
     }
 
     private void updatePlayers(final List<ParseObject> players) {
@@ -349,11 +277,71 @@ public class MainActivity extends Activity implements
     }
 
     @Override
-    public void onGoal(Team whoTeam, Role who, Team whereTeam) {
+    public void onSelectGameRole(Team team, Role role) {
+        activeFragmentTag = PlayerListFragment.TAG;
+
+        getFragmentManager().beginTransaction()
+                .setCustomAnimations(
+                        R.animator.slide_in_left,
+                        R.animator.slide_out_right,
+                        R.animator.slide_in_right,
+                        R.animator.slide_out_left
+                )
+                .replace(R.id.container, PlayerListFragment.newInstance(team, role), activeFragmentTag)
+                .addToBackStack(null)
+                .commit();
+
+
+        ParseQuery.getQuery("Player")
+                .fromLocalDatastore()
+                .orderByAscending("name")
+                .findInBackground(new FindCallback<ParseObject>() {
+                    @Override
+                    public void done(final List<ParseObject> players, ParseException e) {
+                        if (players.isEmpty()) {
+                            ParseQuery.getQuery("Player")
+                                    .orderByAscending("name")
+                                    .findInBackground(new FindCallback<ParseObject>() {
+                                        @Override
+                                        public void done(final List<ParseObject> players, ParseException e) {
+                                            // Release any objects previously pinned for this query.
+                                            ParseObject.unpinAllInBackground(PLAYERS_LIST_LABEL, players, new DeleteCallback() {
+                                                public void done(ParseException e) {
+                                                    if (e != null) {
+                                                        // There was some error.
+                                                        return;
+                                                    }
+
+                                                    // Add the latest results for this query to the cache.
+                                                    ParseObject.pinAllInBackground(PLAYERS_LIST_LABEL, players);
+                                                    updatePlayers(players);
+                                                }
+                                            });
+                                        }
+                                    });
+                        } else {
+                            updatePlayers(players);
+                        }
+                    }
+                });
+
+        updateBar();
+    }
+
+    @Override
+    public void onGoal(Team whoTeam, Role who, boolean isAutoGoal) {
         ParseObject newGoal = new ParseObject("Goal");
 
         switch (whoTeam) {
             case Red: {
+                if (isAutoGoal) {
+                    newGoal.put("where", ParseObject.createWithoutData("Team", "aAKlFkJ3EL"));
+                    blueGoals += 1;
+                } else {
+                    newGoal.put("where", ParseObject.createWithoutData("Team", "bV5hMUx9Ge"));
+                    redGoals += 1;
+                }
+
                 switch (who) {
                     case Goalkeeper: {
                         newGoal.put("who", redGoalkeeper);
@@ -367,6 +355,14 @@ public class MainActivity extends Activity implements
                 break;
             }
             case Blue: {
+                if (isAutoGoal) {
+                    newGoal.put("where", ParseObject.createWithoutData("Team", "bV5hMUx9Ge"));
+                    redGoals += 1;
+                } else {
+                    newGoal.put("where", ParseObject.createWithoutData("Team", "aAKlFkJ3EL"));
+                    blueGoals += 1;
+                }
+
                 switch (who) {
                     case Goalkeeper: {
                         newGoal.put("who", blueGoalkeeper);
@@ -381,43 +377,33 @@ public class MainActivity extends Activity implements
             }
         }
 
-        switch (whereTeam) {
-            case Red: {
-                blueGoals += 1;
-                newGoal.put("where", ParseObject.createWithoutData("Team", "aAKlFkJ3EL"));
-                break;
-            }
-            case Blue: {
-                redGoals += 1;
-                newGoal.put("where", ParseObject.createWithoutData("Team", "bV5hMUx9Ge"));
-                break;
-            }
-        }
-
         newGoal.saveEventually();
 
         if (redGoals == 10 || blueGoals == 10) {
             onGameEnded();
         } else {
-            getFragmentManager().popBackStack();
-            activeFragmentTag = FieldFragment.TAG;
-            updateBar();
+            final FieldFragment fragment = (FieldFragment) getFragmentManager().findFragmentByTag(FieldFragment.TAG);
+            fragment.updateView();
         }
     }
 
     @Override
     public String getPlayerName(Team team, Role role) {
-        String name = getString(R.string.choose_player);
+        String name = null;
 
         switch (team) {
             case Red: {
                 switch (role) {
                     case Goalkeeper: {
-                        name = redGoalkeeperName != null ? redGoalkeeperName : getString(R.string.choose_goalkeeper);
+                        if (redGoalkeeperName != null) {
+                            name = redGoalkeeperName;
+                        }
                         break;
                     }
                     case Forward: {
-                        name = redForwardName != null ? redForwardName : getString(R.string.choose_forward);
+                        if (redForwardName != null) {
+                            name = redForwardName;
+                        }
                         break;
                     }
                 }
@@ -426,11 +412,15 @@ public class MainActivity extends Activity implements
             case Blue: {
                 switch (role) {
                     case Goalkeeper: {
-                        name = blueGoalkeeperName != null ? blueGoalkeeperName : getString(R.string.choose_goalkeeper);
+                        if (blueGoalkeeperName != null) {
+                            name = blueGoalkeeperName;
+                        }
                         break;
                     }
                     case Forward: {
-                        name = blueForwardName != null ? blueForwardName : getString(R.string.choose_forward);
+                        if (blueForwardName != null) {
+                            name = blueForwardName;
+                        }
                         break;
                     }
                 }
@@ -442,7 +432,7 @@ public class MainActivity extends Activity implements
     }
 
     @Override
-    public boolean isPlayersSet() {
+    public boolean arePlayersSet() {
         return redGoalkeeper != null && redForward != null && blueForward != null && blueGoalkeeper != null;
     }
 

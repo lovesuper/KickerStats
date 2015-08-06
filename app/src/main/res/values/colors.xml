@@ -11,4 +11,10 @@
 
     <color name="blue_goalkeeper_background">#ff33b5e5</color>
     <color name="blue_goalkeeper_background_pressed">#8033b5e5</color>
+
+    <color name="autogoal_light_background">#ffffbb33</color>
+    <color name="autogoal_light_background_pressed">#80ffbb33</color>
+
+    <color name="autogoal_dark_background">#ffff8800</color>
+    <color name="autogoal_dark_background_pressed">#80ff8800</color>
 </resources>
