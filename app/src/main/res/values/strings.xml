@@ -20,4 +20,5 @@
     <string name="end_game">Закончить игру</string>
     <string name="autogoal">Автогол</string>
     <string name="game_ended">Игра окончена</string>
+    <string name="cancel_goal">Отменить гол</string>
 </resources>

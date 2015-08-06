@@ -12,6 +12,13 @@
         />
 
     <item
+        android:id="@+id/action_undo_goal"
+        android:title="@string/cancel_goal"
+        android:icon="@drawable/ic_action_undo"
+        android:showAsAction="never"
+        />
+
+    <item
         android:id="@+id/action_reset_game"
         android:title="@string/reset_game"
         android:icon="@drawable/ic_action_reset_game"

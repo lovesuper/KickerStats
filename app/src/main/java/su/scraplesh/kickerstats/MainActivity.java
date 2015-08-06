@@ -11,6 +11,7 @@ import android.view.MenuItem;
 
 import com.parse.DeleteCallback;
 import com.parse.FindCallback;
+import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
@@ -37,6 +38,7 @@ public class MainActivity extends Activity implements
     private String activeFragmentTag;
     private int redGoals = 0;
     private int blueGoals = 0;
+    private ParseObject lastGoal;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +102,7 @@ public class MainActivity extends Activity implements
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         menu.findItem(R.id.action_end_game).setVisible(arePlayersSet());
+        menu.findItem(R.id.action_undo_goal).setVisible(lastGoal != null);
         menu.findItem(R.id.action_reset_game).setVisible(activeGame != null);
 
         return super.onPrepareOptionsMenu(menu);
@@ -110,6 +113,28 @@ public class MainActivity extends Activity implements
         switch (item.getItemId()) {
             case R.id.action_end_game: {
                 return onGameEnded(false);
+            }
+            case R.id.action_undo_goal: {
+                if (lastGoal != null) {
+                    lastGoal.getParseObject("where").fetchInBackground(new GetCallback<ParseObject>() {
+                        @Override
+                        public void done(ParseObject parseObject, ParseException e) {
+                            if (parseObject.getObjectId().equals("aAKlFkJ3EL")) {
+                                blueGoals -= 1;
+                            } else {
+                                redGoals -= 1;
+                            }
+
+                            final FieldFragment fragment = (FieldFragment) getFragmentManager().findFragmentByTag(FieldFragment.TAG);
+                            fragment.updateView();
+                        }
+                    });
+
+                    lastGoal.put("is_deleted", true);
+                    lastGoal.saveEventually();
+                    lastGoal = null;
+                }
+                return true;
             }
             case R.id.action_reset_game: {
                 return resetGame();
@@ -178,6 +203,8 @@ public class MainActivity extends Activity implements
         activeGame = new ParseObject("Game");
         activeGame.put("isDeleted", false);
         activeGame.saveEventually();
+
+        lastGoal = null;
 
         activeFragmentTag = FieldFragment.TAG;
         getFragmentManager().beginTransaction()
@@ -336,25 +363,26 @@ public class MainActivity extends Activity implements
 
     @Override
     public void onGoal(Team whoTeam, Role who, boolean isAutoGoal) {
-        ParseObject newGoal = new ParseObject("Goal");
+        lastGoal = new ParseObject("Goal");
+        lastGoal.put("is_deleted", false);
 
         switch (whoTeam) {
             case Red: {
                 if (isAutoGoal) {
-                    newGoal.put("where", ParseObject.createWithoutData("Team", "aAKlFkJ3EL"));
+                    lastGoal.put("where", ParseObject.createWithoutData("Team", "aAKlFkJ3EL"));
                     blueGoals += 1;
                 } else {
-                    newGoal.put("where", ParseObject.createWithoutData("Team", "bV5hMUx9Ge"));
+                    lastGoal.put("where", ParseObject.createWithoutData("Team", "bV5hMUx9Ge"));
                     redGoals += 1;
                 }
 
                 switch (who) {
                     case Goalkeeper: {
-                        newGoal.put("who", redGoalkeeper);
+                        lastGoal.put("who", redGoalkeeper);
                         break;
                     }
                     case Forward: {
-                        newGoal.put("who", redForward);
+                        lastGoal.put("who", redForward);
                         break;
                     }
                 }
@@ -362,20 +390,20 @@ public class MainActivity extends Activity implements
             }
             case Blue: {
                 if (isAutoGoal) {
-                    newGoal.put("where", ParseObject.createWithoutData("Team", "bV5hMUx9Ge"));
+                    lastGoal.put("where", ParseObject.createWithoutData("Team", "bV5hMUx9Ge"));
                     redGoals += 1;
                 } else {
-                    newGoal.put("where", ParseObject.createWithoutData("Team", "aAKlFkJ3EL"));
+                    lastGoal.put("where", ParseObject.createWithoutData("Team", "aAKlFkJ3EL"));
                     blueGoals += 1;
                 }
 
                 switch (who) {
                     case Goalkeeper: {
-                        newGoal.put("who", blueGoalkeeper);
+                        lastGoal.put("who", blueGoalkeeper);
                         break;
                     }
                     case Forward: {
-                        newGoal.put("who", blueForward);
+                        lastGoal.put("who", blueForward);
                         break;
                     }
                 }
@@ -383,7 +411,7 @@ public class MainActivity extends Activity implements
             }
         }
 
-        newGoal.saveEventually();
+        lastGoal.saveEventually();
 
         if (redGoals == 10 || blueGoals == 10) {
             onGameEnded(false);
