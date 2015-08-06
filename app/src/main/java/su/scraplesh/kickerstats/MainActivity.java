@@ -169,6 +169,8 @@ public class MainActivity extends Activity implements
         blueGoalkeeper = null;
         blueGoalkeeperName = null;
 
+        lastGoal = null;
+
         redGoals = 0;
         blueGoals = 0;
 
